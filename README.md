@@ -1,15 +1,14 @@
-## Example of API integeraition with Unisender 
-- automatic email message dilivery depends of born date
+## Working example of Unisender API integration
+### Automatic email message dilivery depends on born date
+This project helps our HR emploee send automatic email messages.
 
-This project have real bisness purpose in my company.
-It sends 3 type of emails:
+Three sripts and three type of emails:
 - in the end of each month - list of people who have birthday on next month
-- daily notification to all crue member - list of people who have birthday today
-- personal congratulations from Boss to birthday person
+- daily notification to all crew member - list of people who have birthday today
+- personal congratulation from boss to birthday person
 
-This project gave me more experiense with - 
+This project gave me practical experienсe with
 - curl extension
-- basic knoledge how implement API integraition
+- basic knowledge how implement API integration
 - carbon library
-
-
+- callback functions
