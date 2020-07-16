@@ -20,7 +20,7 @@ $emailsListId = '19989539';
 $allEmployees = parsExcel(__DIR__ . '/../input-data/birthday.xlsx');
 $bornTodayEmployees = addGender(addShortName(getBornToday($allEmployees)));
 
-if (empty($bornTodayEmployees) || empty($bornTodayEmployees['email'])) {
+if (empty($bornTodayEmployees)) {
     rightToLog('{"today no cake"}', LOG_FILE_BOSS);
     return;
 }
@@ -28,6 +28,10 @@ if (empty($bornTodayEmployees) || empty($bornTodayEmployees['email'])) {
 $htmlTemplate = file_get_contents(__DIR__ . '/../html-templates/FromBoss.html');
 
 foreach ($bornTodayEmployees as $employee) {
+    if (empty($employees['email'])) {
+        rightToLog('{"no email adress"}', LOG_FILE_BOSS);
+        break;
+    }
     $personalHtml = makePersonalHtmlFromBoss($htmlTemplate, $employee);
     $postData = [
         'format' => 'json',
