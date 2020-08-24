@@ -53,7 +53,7 @@ function getBornInNextMonth(array $employees): array
         }
     });
     
-    return $employeesBirthdayinNextMonth;
+    return sortByDate($employeesBirthdayinNextMonth);
 }
 
 
@@ -85,10 +85,10 @@ function genGender(string $fullName): string
 {
     $femaleSuffixs = ['на'];
     $maleSuffixs = ['ич'];
-    $SuffixFromfullName = mb_substr($fullName, -2);
-    if (in_array($SuffixFromfullName, $femaleSuffixs)) {
+    $suffixFromfullName = mb_substr($fullName, -2);
+    if (in_array($suffixFromfullName, $femaleSuffixs)) {
         return 'female';
-    } elseif (in_array($SuffixFromfullName, $maleSuffixs)) {
+    } elseif (in_array($suffixFromfullName, $maleSuffixs)) {
         return 'male';
     } else {
         return 'absent';
@@ -96,7 +96,7 @@ function genGender(string $fullName): string
 }
 
 
-function sendDataToUnisender(string $url, array $postData, string $logFile)
+function sendDataToUnisender(string $url, array $postData)
 {
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -104,7 +104,6 @@ function sendDataToUnisender(string $url, array $postData, string $logFile)
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
     $response = curl_exec($ch);
     curl_close($ch);
-    rightToLog($response, $logFile);
 
     return $response;
 }
@@ -112,8 +111,8 @@ function sendDataToUnisender(string $url, array $postData, string $logFile)
 
 function rightToLog(string $logString, string $logFile)
 {
-    $time = Carbon::now(TIME_ZONE)->toDateTimeString();
-    $logString = "{$time} {$logString}\n";
+    $timeNow = Carbon::now(TIME_ZONE)->toDateTimeString();
+    $logString = "{$timeNow} {$logString}\n";
     file_put_contents($logFile, $logString, FILE_APPEND);
 }
 
@@ -132,14 +131,14 @@ function makeDailyHtmlList(array $bornTodayEmployees): string
 
 function makeMonthlyHtmlList(array $borninNextMonthEmployees): string
 {
-    $string = '';
-    foreach ($borninNextMonthEmployees as $employee) {
-        $BornDate = Carbon::createFromDate($employee['born'])->format('d.m');
-        $string = $string . "<li><span style='font-size:19px;'>{$BornDate} {$employee['full_name']}</span><br>\n";
-        $string = $string . "<span style='font-size:16px;'>{$employee['position']}</span></li>\n";
-    }
+    $result = array_reduce($borninNextMonthEmployees, function ($acc, $employee) {
+            $BornDate = Carbon::createFromDate($employee['born'])->format('d.m');
+            $acc = $acc . "<li><span style='font-size:19px;'>{$BornDate} {$employee['full_name']}</span><br>\n";
+            $acc = $acc . "<span style='font-size:16px;'>{$employee['position']}</span></li>\n";
+            return $acc;
+    });
 
-    return $string;
+    return $result;
 }
 
 
@@ -164,13 +163,31 @@ function makePersonalHtmlFromBoss(string $htmlTemplate, array $employee): string
 function getNextMonthName(): string
 {
     $nextMonthInCalendar = Carbon::now()->locale('ru_RU')->addMonthNoOverflow()->month;
-    $months = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
+    $months = [
+        'январе',
+        'феврале',
+        'марте',
+        'апреле',
+        'мае',
+        'июне',
+        'июле',
+        'августе',
+        'сентябре',
+        'октябре',
+        'ноябре',
+        'декабре'
+    ];
+
     return $months[$nextMonthInCalendar - 1];
 }
 
 
 function sortByDate($employees)
 {
-    usort($employees, fn($a, $b) => Carbon::createFromDate($a['born'])->day <=> Carbon::createFromDate($b['born'])->day);
+    usort(
+        $employees,
+        fn($a, $b) => Carbon::createFromDate($a['born'])->day <=> Carbon::createFromDate($b['born'])->day
+    );
+
     return $employees;
 }

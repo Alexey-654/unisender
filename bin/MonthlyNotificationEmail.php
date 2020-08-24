@@ -4,30 +4,28 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use function Unisender\parsExcel;
 use function Unisender\getBornInNextMonth;
-use function Unisender\sortByDate;
 use function Unisender\makeMonthlyHtmlList;
 use function Unisender\getNextMonthName;
 use function Unisender\sendDataToUnisender;
 
 const LOG_FILE_MONTHLY = __DIR__ . '/../logs/MonthlyNotification.json';
 
-$methodCreateEmail = 'createEmailMessage';
-$methodCreateCampaign = 'createCampaign';
-$url1 = "https://api.unisender.com/ru/api/{$methodCreateEmail}";
-$url2 = "https://api.unisender.com/ru/api/{$methodCreateCampaign}";
+$methods = ['createEmailMessage', 'createCampaign'];
+$urlCreateEmail = "https://api.unisender.com/ru/api/{$methods[0]}";
+$urlCreateCampaign = "https://api.unisender.com/ru/api/{$methods[1]}";
 $key = 'key-from-unisender';
 $emailsListId = '19989539';
 
-
-$bornInNextMonthEmployees = sortByDate(getBornInNextMonth(parsExcel(__DIR__ . '/../input-data/birthday.xlsx')));
-$htmlTemplate = file_get_contents(__DIR__ . '/../html-templates/MonthlyNotification.html');
+$employeesBirthday = parsExcel(__DIR__ . '/../input-data/birthday.xlsx');
+$bornInNextMonthEmployees = getBornInNextMonth($employeesBirthday);
 $birthdayHtmlList = makeMonthlyHtmlList($bornInNextMonthEmployees);
-$nextMonthInCalendar = getNextMonthName();
+$htmlTemplate = file_get_contents(__DIR__ . '/../html-templates/MonthlyNotification.html');
 
+$nextMonthInCalendar = getNextMonthName();
 $bodyMessage = str_replace("{next month}", $nextMonthInCalendar, $htmlTemplate);
 $bodyMessage = str_replace("{list}", $birthdayHtmlList, $bodyMessage);
 
-$DataForMethodCreateEmail = [
+$dataForMethodCreateEmail = [
     'format' => 'json',
     'api_key' => $key,
     'sender_name' => 'СК "Семья"',
@@ -37,13 +35,14 @@ $DataForMethodCreateEmail = [
     'list_id' => $emailsListId,
 ];
 
-$response = sendDataToUnisender($url1, $DataForMethodCreateEmail, LOG_FILE_MONTHLY);
-$message_id = json_decode($response, true);
+$responseForCreateEmail = sendDataToUnisender($urlCreateEmail, $dataForMethodCreateEmail);
+$response_params = json_decode($responseForCreateEmail, true);
 
-$DataForMethodCreateCampaign = [
+$dataForMethodCreateCampaign = [
     'format' => 'json',
     'api_key' => $key,
-    'message_id' => $message_id['result']['message_id'],
+    'message_id' => $response_params['result']['message_id'],
 ];
 
-sendDataToUnisender($url2, $DataForMethodCreateCampaign, LOG_FILE_MONTHLY);
+$responseForCreateCampaign = sendDataToUnisender($urlCreateCampaign, $dataForMethodCreateCampaign);
+rightToLog($responseForCreateCampaign, LOG_FILE_MONTHLY);
